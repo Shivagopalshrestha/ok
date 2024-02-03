@@ -1,40 +1,42 @@
-import altair as alt
-import numpy as np
-import pandas as pd
 import streamlit as st
+import yfinance as yf
+import pandas as pd
 
-"""
-# Welcome to Streamlit!
+def fetch_revenue_data(symbols):
+    revenue_data = {}
 
-Edit `/streamlit_app.py` to customize this app to your heart's desire :heart:.
-If you have any questions, checkout our [documentation](https://docs.streamlit.io) and [community
-forums](https://discuss.streamlit.io).
+    for symbol in symbols:
+        try:
+            stock = yf.download(symbol, start="2020-01-01", end="2022-01-01")
+            if not stock.empty and 'Close' in stock.columns:
+                revenue_data[symbol] = stock['Close'].mean()
+            else:
+                st.warning(f"No revenue data available for {symbol}.")
+        except Exception as e:
+            st.error(f"Error fetching data for {symbol}: {e}")
 
-In the meantime, below is an example of what you can do with just a few lines of code:
-"""
+    return revenue_data
 
-num_points = st.slider("Number of points in spiral", 1, 10000, 1100)
-num_turns = st.slider("Number of turns in spiral", 1, 300, 31)
+def main():
+    st.title("NASDAQ 100 Revenue Growth Monitoring App")
 
-indices = np.linspace(0, 1, num_points)
-theta = 2 * np.pi * num_turns * indices
-radius = indices
+    # Step 1: Retrieve NASDAQ 100 stock symbols
+    nasdaq_100_tickers = {
+        # ... (your ticker data)
+    }
+    nasdaq100_symbols = nasdaq_100_tickers.keys()
 
-x = radius * np.cos(theta)
-y = radius * np.sin(theta)
+    # Step 2: Fetch revenue data
+    revenue_data = fetch_revenue_data(nasdaq100_symbols)
 
-df = pd.DataFrame({
-    "x": x,
-    "y": y,
-    "idx": indices,
-    "rand": np.random.randn(num_points),
-})
+    # Step 3: Store and analyze data
+    revenue_df = pd.DataFrame(list(revenue_data.items()), columns=['Symbol', 'Mean Revenue'])
 
-st.altair_chart(alt.Chart(df, height=700, width=700)
-    .mark_point(filled=True)
-    .encode(
-        x=alt.X("x", axis=None),
-        y=alt.Y("y", axis=None),
-        color=alt.Color("idx", legend=None, scale=alt.Scale()),
-        size=alt.Size("rand", legend=None, scale=alt.Scale(range=[1, 150])),
-    ))
+    # Step 4: Monitor growth
+    revenue_df['Revenue Growth'] = revenue_df['Mean Revenue'].pct_change() * 100
+
+    # Step 5: Display results
+    st.dataframe(revenue_df)
+
+if __name__ == "__main__":
+    main()
