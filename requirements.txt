@@ -2,3 +2,8 @@ altair
 pandas
 streamlit
 yfinance==0.1.63
+requests
+bs4
+datetime
+time
+plyer
